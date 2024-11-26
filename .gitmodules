@@ -1,0 +1,3 @@
+[submodule "assignments/final-project"]
+	path = assignments/final-project
+	url = https://github.com/andrewmaa/albertOS
