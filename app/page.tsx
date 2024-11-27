@@ -218,7 +218,7 @@ export default function LandingPage() {
           style={{ opacity: 0 }}
         >
           <h1 className="text-6xl font-bold text-white mb-6 drop-shadow-lg">
-            Welcome to AlbertOS
+            Welcome to AlbertOS.
           </h1>
           <div className="text-3xl text-white mb-8 drop-shadow-lg">
             <span className="inline-flex">
@@ -232,6 +232,10 @@ export default function LandingPage() {
               />
             </span>
           </div>
+          <p className="text-gray-200 text-lg mb-8">
+            AlbertOS is a modern reimagining of NYU's Albert system, designed to provide students 
+            with a seamless and intuitive course registration experience.
+          </p>
           <button
             onClick={() => router.push('/login')}
             className="bg-white text-purple-600 px-8 py-3 rounded-lg text-lg font-medium

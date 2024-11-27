@@ -32,17 +32,17 @@ function GradientBackground() {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
-  useFrame(() => {
+  useFrame((state) => {
+    if (!materialRef.current) return
+
     targetPosition.current.x += (mousePosition.current.x - targetPosition.current.x) * 0.05
     targetPosition.current.y += (mousePosition.current.y - targetPosition.current.y) * 0.05
 
-    if (materialRef.current) {
-      materialRef.current.uniforms.uMouse.value = new THREE.Vector2(
-        targetPosition.current.x,
-        targetPosition.current.y
-      )
-      materialRef.current.uniforms.uTime.value += 0.003
-    }
+    materialRef.current.uniforms.uMouse.value.set(
+      mousePosition.current.x,
+      mousePosition.current.y
+    )
+    materialRef.current.uniforms.uTime.value = state.clock.elapsedTime * 1.0
   })
 
   return (
@@ -50,6 +50,7 @@ function GradientBackground() {
       <planeGeometry args={[1, 1, 32, 32]} />
       <shaderMaterial
         ref={materialRef}
+        transparent
         uniforms={{
           uTime: { value: 0 },
           uMouse: { value: new THREE.Vector2(0, 0) },
@@ -87,8 +88,8 @@ function GradientBackground() {
             uv.x *= aspect;
             
             // Create ripple effect
-            float ripple1 = sin(length(uv - vec2(aspect * 0.5, 0.5)) * 10.0 - uTime) * 0.5 + 0.5;
-            float ripple2 = sin(length(uv - vec2(aspect * 0.7, 0.3)) * 8.0 - uTime * 1.2) * 0.5 + 0.5;
+            float ripple1 = sin(length(uv - vec2(aspect * 0.5, 0.5)) * 12.0 - uTime * 1.5) * 0.5 + 0.5;
+            float ripple2 = sin(length(uv - vec2(aspect * 0.7, 0.3)) * 10.0 - uTime * 1.8) * 0.5 + 0.5;
             
             // Mouse influence
             vec2 mouseOffset = uv - (uMouse * vec2(aspect, 1.0) * 0.5 + vec2(aspect * 0.5, 0.5));
@@ -96,7 +97,7 @@ function GradientBackground() {
             float mouseFactor = smoothstep(0.5, 0.0, mouseDistance);
             
             // Wave distortion
-            float wave = sin(uv.x * 10.0 + uTime) * cos(uv.y * 8.0 - uTime) * 0.02;
+            float wave = sin(uv.x * 12.0 + uTime * 1.5) * cos(uv.y * 10.0 - uTime * 1.5) * 0.02;
             uv += wave;
             
             // Dynamic gradient

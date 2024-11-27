@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'NYU-Perstare';
+  src: url('/fonts/NYU-Perstare.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -51,9 +59,19 @@
 
 @layer base {
   * {
-    @apply border-border;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    min-height: 100vh;
+    color: rgb(var(--foreground));
+    background: rgb(var(--background));
+    font-family: 'NYU-Perstare', system-ui, sans-serif;
+  }
+
+  h1 {
+    font-weight: 900;
   }
 }
