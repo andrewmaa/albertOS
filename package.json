@@ -27,7 +27,8 @@
     "sonner": "^1.7.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "three": "0.152.2"
+    "three": "0.152.2",
+    "typed.js": "^2.1.0"
   },
   "devDependencies": {
     "@types/animejs": "^3.1.12",

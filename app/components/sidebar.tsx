@@ -30,7 +30,7 @@ export function Sidebar({ currentPage }: SidebarProps) {
     try {
       await logout()
       toast.success("Logged out successfully")
-      router.push('/login')
+      router.push('/')
     } catch (error) {
       toast.error("Failed to log out")
     }

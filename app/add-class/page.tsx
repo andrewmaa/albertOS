@@ -226,6 +226,7 @@ function CartDropdown({ items, isOpen, onClose }: CartDropdownProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const removeFromCart = useMutation(api.courses.removeFromCart)
   const [removingId, setRemovingId] = useState<string | null>(null)
+  const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
 
   useEffect(() => {
     if (isOpen) {
@@ -278,7 +279,6 @@ function CartDropdown({ items, isOpen, onClose }: CartDropdownProps) {
   const handleRemove = async (courseId: string) => {
     setRemovingId(courseId)
     try {
-      const [sessionId] = useLocalStorage('sessionId', undefined)
       console.log("Removing course:", courseId, "with sessionId:", sessionId) // Debug log
       await removeFromCart({ 
         courseId: courseId,
