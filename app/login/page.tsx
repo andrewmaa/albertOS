@@ -21,7 +21,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Add regular login logic here
+    // Add regular login logic here.
     setTimeout(() => {
       setIsLoading(false)
       router.push('/classes')
