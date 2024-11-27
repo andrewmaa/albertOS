@@ -12,6 +12,7 @@ import type { Course } from "../../convex/types";
 import { toast } from "sonner"
 import anime from 'animejs'
 import { Id } from "../../convex/_generated/dataModel";
+import useLocalStorage from "@/lib/useLocalStorage";
 
 interface CartItem {
   _id: Id<"cart">;
@@ -39,9 +40,7 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const addToCart = useMutation(api.courses.addToCart)
   const [isAdding, setIsAdding] = useState(false)
-  const [sessionId] = useState(() => {
-    return localStorage.getItem('sessionId') || Date.now().toString();
-  })
+  const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId }) || []
   
   const isInCart = cartItems.some(item => item.classNumber === course.classNumber)
@@ -279,11 +278,11 @@ function CartDropdown({ items, isOpen, onClose }: CartDropdownProps) {
   const handleRemove = async (courseId: string) => {
     setRemovingId(courseId)
     try {
-      const sessionId = localStorage.getItem('sessionId')
+      const [sessionId] = useLocalStorage('sessionId', undefined)
       console.log("Removing course:", courseId, "with sessionId:", sessionId) // Debug log
       await removeFromCart({ 
         courseId: courseId,
-        sessionId: sessionId || undefined
+        sessionId: sessionId
       })
       toast.success("Removed from cart")
     } catch (error) {
@@ -370,11 +369,7 @@ export default function AddClassPage() {
   const [isVisible, setIsVisible] = useState(false)
   const searchCourses = useAction(api.courses.searchCourses);
   const [searchResults, setSearchResults] = useState<Course[]>([]);
-  const [sessionId] = useState(() => {
-    const id = localStorage.getItem('sessionId') || Date.now().toString();
-    localStorage.setItem('sessionId', id);
-    return id;
-  });
+  const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId })
   const validateSchedule = useAction(api.courses.validateSchedule)
   const [isEnrolling, setIsEnrolling] = useState(false)

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import useLocalStorage from "@/lib/useLocalStorage";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -7,14 +8,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export const getCurrentUserId = () => {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('userId');
+  return useLocalStorage('userId', undefined);
 };
 
 export const setCurrentUserId = (userId: string) => {
-  localStorage.setItem('userId', userId);
+  useLocalStorage('userId', userId);
 };
 
 export const clearCurrentUserId = () => {
-  localStorage.removeItem('userId');
+  useLocalStorage('userId', undefined);
 };
 

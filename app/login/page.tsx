@@ -6,6 +6,7 @@ import { useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { toast } from 'sonner'
 import dynamic from 'next/dynamic'
+import useLocalStorage from '@/lib/useLocalStorage'
 
 const Background = dynamic(() => import('@/app/components/gradient-background'), { ssr: false })
 
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isDemoLoading, setIsDemoLoading] = useState(false)
+  const [sessionId, setSessionId] = useLocalStorage<string | undefined>('sessionId', undefined)
+  const [userId, setUserId] = useLocalStorage<string | undefined>('userId', undefined)
   const createDemoSession = useMutation(api.auth.createDemoSession)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +33,8 @@ export default function LoginPage() {
     try {
       const { sessionId, userId } = await createDemoSession()
       // Store both sessionId and userId in localStorage
-      localStorage.setItem('sessionId', sessionId)
-      localStorage.setItem('userId', userId)
+      setSessionId(sessionId)
+      setUserId(userId)
       // Redirect directly to the dashboard page
       router.push('/dashboard')  // or whatever your main dashboard route is
     } catch (error) {
