@@ -2,6 +2,7 @@
 
 import { ArrowRight, Plus } from 'lucide-react'
 import Link from 'next/link'
+import Background from './gradient-background'
 
 interface SectionHeaderProps {
   title: string
@@ -12,9 +13,10 @@ interface SectionHeaderProps {
 export default function SectionHeader({ title, href, isMainHeader }: SectionHeaderProps) {
   if (isMainHeader) {
     return (
-      <div className="bg-purple-600 py-16">
-        <div className="max-w-[1200px] w-full mx-auto px-8">
-          <div className="flex justify-between items-center">
+      <div className="relative h-[200px] overflow-hidden">
+        <Background />
+        <div className="max-w-[1200px] w-full mx-auto px-8 relative h-full flex items-center">
+          <div className="flex justify-between items-center w-full">
             <div>
               <h1 className="text-4xl font-bold mb-2 text-white">Welcome to AlbertOS.</h1>
               <p className="text-white">

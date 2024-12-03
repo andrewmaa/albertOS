@@ -174,7 +174,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2">
               {/* Logo */}
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-white text-xl">A</span>
+                <img src="../logo-icon.svg" alt="AlbertOS Logo"/>
               </div>
               <span className="text-white font-bold text-xl">AlbertOS</span>
             </div>
@@ -366,9 +366,29 @@ export default function LandingPage() {
                 <br />
                 <br />
 
-                Thank you to the team @ BUGS for providing <a href="https://github.com/bugs-nyu/schedge/" className="text-white-600 relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 hover:after:w-full after:bg-white after:transition-all font-bold">Schedge</a>, the API that made this possible.
+                Thank you to the team @ BUGS for providing{' '}
+                <a 
+                  href="https://github.com/bugs-nyu/schedge/" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-white hover:text-purple-400 transition-colors
+                    relative after:absolute after:bottom-0 after:left-0 after:h-[1px] 
+                    after:w-0 hover:after:w-full after:bg-purple-400 after:transition-all"
+                >
+                  Schedge
+                </a>
+                , the API that made this possible.
                 <br />
-                <a href="https://andrewma.io/albertos" className="text-white-600 relative after:absolute after:bottom-0 after:left-0 after:h-[1px] after:w-0 hover:after:w-full after:bg-white after:transition-all font-bold">You can learn more about the development of this project here</a>.
+                <a 
+                  href="https://andrewma.io/albertos" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-white hover:text-purple-400 transition-colors
+                    relative after:absolute after:bottom-0 after:left-0 after:h-[1px] 
+                    after:w-0 hover:after:w-full after:bg-purple-400 after:transition-all"
+                >
+                  You can learn more about the development of this project here
+                </a>.
               </p>
             </FadeSection>
           </div>

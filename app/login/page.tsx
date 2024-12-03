@@ -47,6 +47,25 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen">
+      {/* Back Button */}
+      <button
+        onClick={() => router.push('/')}
+        className="absolute top-4 left-4 z-20 flex items-center text-white hover:text-gray-200 transition-colors"
+      >
+        <svg 
+          className="w-5 h-5 mr-1" 
+          fill="none" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth="2" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Home
+      </button>
+
       {/* Background */}
       <div className="absolute inset-0 -z-10">
         <Background />
@@ -57,8 +76,8 @@ export default function LoginPage() {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md space-y-8 bg-white/90 backdrop-blur-sm p-8 rounded-lg shadow-xl">
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome to AlbertOS</h1>
-              <p className="text-gray-600">Sign in to your NYU account</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to AlbertOS!</h1>
+              <p className="text-gray-600">Sign in to your NYU account, or try the demo version.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -163,11 +182,14 @@ export default function LoginPage() {
         <div className="hidden md:flex md:flex-1 items-center justify-center p-8">
           <div className="max-w-md text-center text-white">
             <div className="mb-8">
-              <div className="w-24 h-24 mx-auto bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <span className="text-purple-700 text-2xl font-bold">NYU</span>
+              <div className="w-40 h-40 mx-auto">
+                <img 
+                  src="/nyu-logo.png" 
+                  alt="NYU Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
-            <h2 className="text-3xl font-bold mb-4 drop-shadow-lg">New York University</h2>
             <p className="text-white/90 drop-shadow">
               Access your courses, check grades, and manage your academic journey all in one place.
             </p>
@@ -177,4 +199,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

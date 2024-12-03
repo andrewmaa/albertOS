@@ -51,10 +51,9 @@ export const searchCourses = action({
   args: { searchTerm: v.string() },
   handler: async (ctx, { searchTerm }) => {
     try {
-      const [subject, school] = searchTerm.split("-");
-      if (!subject || !school) return [];
-
-      const apiUrl = `${SCHEDGE_API}/${TERM}/${school}/${subject}?full=true`;
+      // Hardcode the term to fa2022
+      const term = "fa2022";
+      const apiUrl = `https://nyu.a1liu.com/api/search/${term}?query=${encodeURIComponent(searchTerm)}`;
       console.log(`Fetching: ${apiUrl}`);
 
       const response = await fetch(apiUrl);
@@ -64,87 +63,24 @@ export const searchCourses = action({
       }
 
       const courses = await response.json();
-      console.log("Raw API response:", courses); // Debug log
       
-      return courses
-        .map((course: any) => {
-          const section = course.sections?.[0] || {};
-          console.log("Processing section:", section); // Debug log
-          
-          // Format schedule
-          let scheduleString = "TBA";
-          if (section.meetings && Array.isArray(section.meetings) && section.meetings.length > 0) {
-            const validMeetings = section.meetings.filter((meeting: any) => 
-              meeting && meeting.beginDate && meeting.minutesDuration
-            );
+      // Transform the API response to match our course structure
+      return courses.map((course: any) => ({
+        _id: course.deptCourseId?.toString(),
+        name: course.name,
+        code: course.deptCourseId,
+        description: course.description || "No description available",
+        instructor: course.sections?.[0]?.instructor || "TBA",
+        schedule: course.sections?.[0]?.schedule || "TBA",
+        location: course.sections?.[0]?.location || "TBA",
+        courseType: course.sections?.[0]?.type || "In-Person",
+        section: course.sections?.[0]?.code || "001",
+        classNumber: course.sections?.[0]?.registrationNumber?.toString(),
+        subjectCode: course.subjectCode,
+        capacity: course.sections?.[0]?.maxUnits || 0,
+        enrolled: course.sections?.[0]?.minUnits || 0,
+      }));
 
-            if (validMeetings.length > 0) {
-              scheduleString = validMeetings
-                .map((meeting: any) => {
-                  try {
-                    // Parse the beginDate string
-                    const date = new Date(meeting.beginDate);
-                    // Get day of week (Mon, Tue, etc.)
-                    const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-                    
-                    // Parse time from the string (assuming format "2022-09-01 12:30:00")
-                    const timeStr = meeting.beginDate.split(' ')[1];
-                    const [hours, minutes] = timeStr.split(':').map(Number);
-                    
-                    // Calculate end time
-                    const endMinutes = minutes + meeting.minutesDuration;
-                    const endHours = hours + Math.floor(endMinutes / 60);
-                    const finalMinutes = endMinutes % 60;
-
-                    // Format times
-                    const formatTime = (h: number, m: number) => {
-                      const period = h >= 12 ? 'PM' : 'AM';
-                      const hour = h % 12 || 12;
-                      return `${hour}:${m.toString().padStart(2, '0')}${period}`;
-                    };
-
-                    const startTime = formatTime(hours, minutes);
-                    const endTime = formatTime(endHours, finalMinutes);
-
-                    return `${day} ${startTime}-${endTime}`;
-                  } catch (error) {
-                    console.error("Error formatting meeting:", error, meeting);
-                    return null;
-                  }
-                })
-                .filter(Boolean)
-                .join(", ");
-            }
-          }
-
-          // Format location
-          const location = section.location || "TBA";
-
-          console.log("Formatted schedule:", scheduleString); // Debug log
-          console.log("Formatted location:", location); // Debug log
-
-          return {
-            _id: section.registrationNumber?.toString(),
-            name: course.name,
-            code: `${subject}-${school}-${course.deptCourseId}`,
-            description: course.description || "No description available",
-            instructor: (section.instructors || []).join(", ") || "TBA",
-            schedule: scheduleString,
-            location: location,
-            courseType: section.type || "In-Person",
-            section: section.code || "001",
-            classNumber: section.registrationNumber?.toString(),
-            subjectCode: `${subject}-${school}`,
-            capacity: section.maxUnits || 0,
-            enrolled: section.minUnits || 0,
-            courseNumber: parseInt(course.deptCourseId) || 0,
-          };
-        })
-        .filter(Boolean) // Remove any null results
-        .sort((a: { courseNumber: number }, b: { courseNumber: number }) => {
-          return a.courseNumber - b.courseNumber;
-        })
-        .map(({ courseNumber, ...course }: { courseNumber: number, [key: string]: any }) => course);
     } catch (error) {
       console.error("Error fetching courses:", error);
       return [];

@@ -37,16 +37,17 @@ export function Sidebar({ currentPage }: SidebarProps) {
   }
 
   return (
-    <div className="w-80 min-h-screen bg-white border-r border-gray-200 p-4">
+    <div className="w-64 h-screen bg-white border-r border-gray-200 p-4 sticky top-0 flex flex-col">
       <div className="mb-8 flex items-center">
-        <div className="w-12 h-12 rounded-full bg-gray-200 mr-4" />
+        <div className="w-10 h-10 rounded-full bg-gray-200 mr-3" />
         <div>
-          <h2 className="text-lg font-semibold">Andrew Smith</h2>
-          <p className="text-sm text-gray-500">andrew.smith@nyu.edu</p>
+          <h2 className="text-base font-semibold">Andrew Smith</h2>
+          <p className="text-xs text-gray-500">andrew.smith@nyu.edu</p>
         </div>
       </div>
-      <nav className="flex flex-col justify-between h-[calc(100vh-120px)]">
-        <div className="space-y-1">
+      
+      <div className="flex-1 flex flex-col">
+        <nav className="space-y-1">
           {navItems.map((item) => (
             <Link
               key={item.label}
@@ -58,20 +59,22 @@ export function Sidebar({ currentPage }: SidebarProps) {
                   : "text-gray-700 hover:bg-gray-100"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-4 w-4" />
               <span>{item.label}</span>
             </Link>
           ))}
-        </div>
+        </nav>
         
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
-        >
-          <LogOut className="h-5 w-5" />
-          <span>Log out</span>
-        </button>
-      </nav>
+        <div className="flex-1 flex items-end pb-4">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Log out</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

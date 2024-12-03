@@ -209,7 +209,7 @@ function CartPreview({ onView }: { onView: () => void }) {
   return (
     <div 
       ref={previewRef}
-      className="absolute bottom-full left-0 right-0 px-8"
+      className="absolute bottom-full left-0 right-0 px-8 z-50"
       onClick={onView}
       style={{ opacity: 0, transform: 'translateY(20px)' }}
     >
@@ -299,12 +299,12 @@ function CartDropdown({ items, isOpen, onClose }: CartDropdownProps) {
     <>
       <div 
         ref={overlayRef}
-        className="fixed inset-0 bg-black opacity-0 z-40"
+        className="fixed inset-0 bg-black opacity-0 z-50"
         onClick={handleClose}
       />
       <div 
         ref={contentRef}
-        className="fixed inset-x-0 bottom-0 z-50 transform"
+        className="fixed inset-x-0 bottom-0 transform z-50"
         style={{ maxHeight: getMaxHeight() }}
       >
         <div className="bg-white border-t shadow-lg h-full">
@@ -447,111 +447,103 @@ export default function AddClassPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-50">
-      <div className="flex h-screen">
-        <Sidebar currentPage="/add-class" />
-        <div 
-          className={`flex-1 transition-transform duration-300 ease-in-out transform ${
-            isVisible ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-8">
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center gap-3 mb-6">
-                    <button 
-                      onClick={handleBack}
-                      className="hover:bg-gray-100 p-2 rounded-full"
-                    >
-                      <ArrowLeft className="h-6 w-6" />
-                    </button>
-                    <h1 className="text-3xl font-bold">Add a <span className="bg-purple-600 text-white px-3 py-1 rounded-md">Class</span></h1>
-                  </div>
-
-                  <p className="text-lg mb-6">
-                    Search for a class by subject code (e.g., CSCI-UA, MATH-UA)
-                  </p>
-
-                  <div className="flex gap-4 mb-8">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value.toUpperCase())}
-                      placeholder="Enter subject code..."
-                      className="flex-1 p-3 rounded-md border border-gray-200 bg-gray-50"
-                    />
-                  </div>
-
-                  {searchResults === undefined ? (
-                    <div className="text-center py-8">
-                      <p>Loading courses...</p>
-                    </div>
-                  ) : !searchResults || searchResults.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p>No courses found. Try a different subject code.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 mb-8">
-                      {searchResults.map((course: Course) => (
-                        <CourseCard 
-                          key={course._id} 
-                          course={course} 
-                          onOpenCart={() => setIsCartOpen(true)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar currentPage="/add-class" />
+      <div className="flex-1 flex flex-col relative">
+        <div className="flex-1 overflow-y-auto pb-[80px]">
+          <div className="p-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center gap-3 mb-6">
+                <button 
+                  onClick={handleBack}
+                  className="hover:bg-gray-100 p-2 rounded-full"
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </button>
+                <h1 className="text-3xl font-bold">Add a <span className="bg-purple-600 text-white px-3 py-1 rounded-md">Class</span></h1>
               </div>
-            </div>
-            
-            <div 
-              className="bg-white border-t relative"
-              onMouseEnter={handleCartMouseEnter}
-              onMouseLeave={handleCartMouseLeave}
-            >
-              {isCartHovered && !isCartOpen && (
-                <CartPreview 
-                  onView={() => {
-                    setIsCartHovered(false)
-                    setIsCartOpen(true)
-                  }} 
+
+              <p className="text-lg mb-6">
+                Search for a class by subject code (e.g., CSCI-UA, MATH-UA)
+              </p>
+
+              <div className="flex gap-4 mb-8">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search for courses (e.g. Linear algebra)"
+                  className="flex-1 p-3 rounded-md border border-gray-200 bg-gray-50"
                 />
-              )}
-              <div className="py-4 px-8">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">
-                    Cart {cartItems?.length ? `(${cartItems.length})` : ''}
-                  </h2>
-                  <button 
-                    className={`bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md flex items-center gap-2 
-                      ${(!cartItems?.length || isEnrolling) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleEnroll}
-                    disabled={!cartItems?.length || isEnrolling}
-                  >
-                    {isEnrolling ? (
-                      <>
-                        <span className="animate-spin">↻</span>
-                        Validating...
-                      </>
-                    ) : (
-                      <>
-                        <span>+</span> Enroll
-                      </>
-                    )}
-                  </button>
-                </div>
               </div>
+
+              {searchResults === undefined ? (
+                <div className="text-center py-8">
+                  <p>Loading courses...</p>
+                </div>
+              ) : !searchResults || searchResults.length === 0 ? (
+                <div className="text-center py-8">
+                  <p>No courses found. Try a different search term.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 mb-8">
+                  {searchResults.map((course: Course) => (
+                    <CourseCard 
+                      key={course._id} 
+                      course={course} 
+                      onOpenCart={() => setIsCartOpen(true)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-            
-            <CartDropdown 
-              items={cartItems || []} 
-              isOpen={isCartOpen}
-              onClose={() => setIsCartOpen(false)}
-            />
           </div>
         </div>
+        
+        <div 
+          className="absolute bottom-0 left-0 right-0 bg-white border-t z-40"
+          onMouseEnter={handleCartMouseEnter}
+          onMouseLeave={handleCartMouseLeave}
+        >
+          {isCartHovered && !isCartOpen && (
+            <CartPreview 
+              onView={() => {
+                setIsCartHovered(false)
+                setIsCartOpen(true)
+              }} 
+            />
+          )}
+          <div className="py-4 px-8">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">
+                Cart {cartItems?.length ? `(${cartItems.length})` : ''}
+              </h2>
+              <button 
+                className={`bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md flex items-center gap-2 
+                  ${(!cartItems?.length || isEnrolling) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleEnroll}
+                disabled={!cartItems?.length || isEnrolling}
+              >
+                {isEnrolling ? (
+                  <>
+                    <span className="animate-spin">↻</span>
+                    Validating...
+                  </>
+                ) : (
+                  <>
+                    <span>+</span> Enroll
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <CartDropdown 
+          items={cartItems || []} 
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+        />
       </div>
     </div>
   )

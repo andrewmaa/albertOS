@@ -71,9 +71,9 @@ function GradientBackground() {
           varying vec2 vUv;
 
           // Gradient colors
-          vec3 color1 = vec3(0.46, 0.15, 0.97); // Rich purple
-          vec3 color2 = vec3(0.89, 0.12, 0.77); // Hot pink
-          vec3 color3 = vec3(0.29, 0.07, 0.85); // Deep blue
+          vec3 color1 = vec3(0.54,0.00,0.88); 
+          vec3 color2 = vec3(0.34,0.02,0.55); 
+          vec3 color3 = vec3(0.29, 0.07, 0.85); 
 
           // Noise function
           float noise(vec2 st) {
@@ -128,10 +128,10 @@ function GradientBackground() {
 
 export default function Background() {
   return (
-    <div className="fixed inset-0">
+    <div className="absolute inset-0 h-full">
       <Canvas 
         camera={{ position: [0, 0, 1] }}
-        style={{ position: 'absolute' }}
+        style={{ position: 'absolute', height: '100%' }}
       >
         <GradientBackground />
       </Canvas>

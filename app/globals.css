@@ -66,8 +66,6 @@
   
   body {
     min-height: 100vh;
-    color: rgb(var(--foreground));
-    background: rgb(var(--background));
     font-family: 'NYU-Perstare', system-ui, sans-serif;
   }
 
