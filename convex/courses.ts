@@ -1,12 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { api } from "./_generated/api";
 
 // API constants
-const SCHEDGE_API = "https://schedge.a1liu.com";
-const TERM_YEAR = "2022";
-const TERM_SEMESTER = "fa";
-const TERM = `${TERM_YEAR}/${TERM_SEMESTER}`;
+const API_BASE = "https://nyu.a1liu.com";
+const TERM = "fa2022";
 
 // Helper function to get or create a session user
 async function getCurrentSessionUser(ctx: any, sessionId: string | undefined) {
@@ -47,13 +46,54 @@ async function getCurrentSessionUser(ctx: any, sessionId: string | undefined) {
   });
 }
 
+// Add interfaces for the API response
+interface Meeting {
+  beginDate: string;
+  minutesDuration: number;
+  endDate: string;
+  beginDateLocal: string;
+  endDateLocal: string;
+}
+
+interface Section {
+  registrationNumber: string;
+  code: string;
+  instructors: string[];
+  type: string;
+  meetings: Meeting[];
+  location: string;
+  maxUnits: number;
+  minUnits: number;
+  status: string;
+}
+
+interface Course {
+  _id: string;
+  name: string;
+  code: string;
+  description: string;
+  sections: {
+    instructor: string;
+    schedule: string;
+    location: string;
+    courseType: string;
+    section: string;
+    classNumber: string;
+    status: string;
+  }[];
+}
+
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+  message?: string;
+}
+
 export const searchCourses = action({
   args: { searchTerm: v.string() },
   handler: async (ctx, { searchTerm }) => {
     try {
-      // Hardcode the term to fa2022
-      const term = "fa2022";
-      const apiUrl = `https://nyu.a1liu.com/api/search/${term}?query=${encodeURIComponent(searchTerm)}`;
+      const apiUrl = `${API_BASE}/api/search/${TERM}?query=${encodeURIComponent(searchTerm)}`;
       console.log(`Fetching: ${apiUrl}`);
 
       const response = await fetch(apiUrl);
@@ -64,22 +104,67 @@ export const searchCourses = action({
 
       const courses = await response.json();
       
-      // Transform the API response to match our course structure
-      return courses.map((course: any) => ({
-        _id: course.deptCourseId?.toString(),
-        name: course.name,
-        code: course.deptCourseId,
-        description: course.description || "No description available",
-        instructor: course.sections?.[0]?.instructor || "TBA",
-        schedule: course.sections?.[0]?.schedule || "TBA",
-        location: course.sections?.[0]?.location || "TBA",
-        courseType: course.sections?.[0]?.type || "In-Person",
-        section: course.sections?.[0]?.code || "001",
-        classNumber: course.sections?.[0]?.registrationNumber?.toString(),
-        subjectCode: course.subjectCode,
-        capacity: course.sections?.[0]?.maxUnits || 0,
-        enrolled: course.sections?.[0]?.minUnits || 0,
-      }));
+      return courses
+        .map((course: any) => {
+          // Process sections
+          const sections = (course.sections || []).map((section: Section) => {
+            const meetings = section.meetings || [];
+            
+            // Format schedule from meetings
+            let schedule = "TBA";
+            if (meetings.length > 0) {
+              const days = meetings.map((meeting: Meeting) => {
+                const date = new Date(meeting.beginDate);
+                const day = date.getUTCDay();
+                return day === 1 ? 'M' : 
+                       day === 2 ? 'T' : 
+                       day === 3 ? 'W' : 
+                       day === 4 ? 'Th' : 
+                       day === 5 ? 'F' : '';
+              }).filter(Boolean).join(' ');
+
+              const firstMeeting = meetings[0];
+              const beginTime = new Date(firstMeeting.beginDate).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+              
+              const beginDate = new Date(firstMeeting.beginDate);
+              const endDate = new Date(beginDate.getTime() + firstMeeting.minutesDuration * 60000);
+              const endTime = endDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+
+              schedule = `${days} ${beginTime} - ${endTime}`;
+            }
+
+            return {
+              instructor: section.instructors?.length > 0 ? section.instructors.join(", ") : "TBA",
+              schedule,
+              location: section.location || "TBA",
+              courseType: section.type || "In-Person",
+              section: section.code || "001",
+              classNumber: section.registrationNumber?.toString() || "",
+              status: section.status || "Open"
+            };
+          });
+
+          return {
+            _id: course.deptCourseId?.toString(),
+            name: course.name,
+            code: `${course.subjectCode} ${course.deptCourseId}`,
+            description: course.description || "No description available",
+            sections
+          };
+        })
+        .sort((a: Course, b: Course) => {
+          const aId = parseInt(a.code.split(' ')[1]);
+          const bId = parseInt(b.code.split(' ')[1]);
+          return aId - bId;
+        });
 
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -238,15 +323,42 @@ export const removeFromCart = mutation({
   },
 });
 
-export const validateSchedule = action({
-  args: { registrationNumbers: v.array(v.string()) },
-  handler: async (ctx, { registrationNumbers }) => {
+export const validateSchedule = mutation({
+  args: {},
+  handler: async (ctx) => {
     try {
-      // Here you would implement schedule validation logic
-      // For now, we'll just return success
+      // Get all cart items
+      const cartItems = await ctx.db.query("cart").collect();
+      if (!cartItems?.length) return { valid: false, error: "Cart is empty" };
+
+      // Check for duplicate courses
+      const courseIds = cartItems.map(item => item.code);
+      const uniqueCourseIds = new Set(courseIds);
+      if (courseIds.length !== uniqueCourseIds.size) {
+        return {
+          valid: false,
+          error: "Cannot enroll in multiple sections of the same course"
+        };
+      }
+
+      // Check for time conflicts
+      for (let i = 0; i < cartItems.length; i++) {
+        for (let j = i + 1; j < cartItems.length; j++) {
+          const schedule1 = parseSchedule(cartItems[i].schedule);
+          const schedule2 = parseSchedule(cartItems[j].schedule);
+
+          if (hasTimeConflict(schedule1, schedule2)) {
+            return {
+              valid: false,
+              error: `Time conflict between ${cartItems[i].name} and ${cartItems[j].name}`
+            };
+          }
+        }
+      }
+
       return {
         valid: true,
-        error: null
+        message: "Schedule validated successfully!"
       };
     } catch (error) {
       return {
@@ -254,8 +366,39 @@ export const validateSchedule = action({
         error: "Failed to validate schedule"
       };
     }
-  },
+  }
 });
+
+// Helper functions
+interface ParsedSchedule {
+  days: string[];
+  startTime: number;
+  endTime: number;
+}
+
+function parseSchedule(schedule: string): ParsedSchedule {
+  // Example schedule: "M W 12:00 PM - 1:15 PM"
+  const [daysStr, timeStr] = schedule.split(' ', 2);
+  const days = daysStr.split(' ');
+  
+  const [startStr, endStr] = timeStr.split(' - ');
+  const startTime = new Date(`1970/01/01 ${startStr}`).getTime();
+  const endTime = new Date(`1970/01/01 ${endStr}`).getTime();
+
+  return { days, startTime, endTime };
+}
+
+function hasTimeConflict(schedule1: ParsedSchedule, schedule2: ParsedSchedule): boolean {
+  // Check if any days overlap
+  const commonDays = schedule1.days.filter(day => schedule2.days.includes(day));
+  if (commonDays.length === 0) return false;
+
+  // Check if times overlap
+  return !(
+    schedule1.endTime <= schedule2.startTime ||
+    schedule2.endTime <= schedule1.startTime
+  );
+}
 
 export const getRegisteredCourses = query({
   handler: async (ctx) => {

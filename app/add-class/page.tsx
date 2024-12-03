@@ -32,7 +32,21 @@ interface CartItem {
 }
 
 interface CourseCardProps {
-  course: Course;
+  course: {
+    _id: string;
+    name: string;
+    code: string;
+    description: string;
+    sections: {
+      instructor: string;
+      schedule: string;
+      location: string;
+      courseType: string;
+      section: string;
+      classNumber: string;
+      status: string;
+    }[];
+  };
   onOpenCart: () => void;
 }
 
@@ -43,7 +57,14 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
   const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId }) || []
   
-  const isInCart = cartItems.some(item => item.classNumber === course.classNumber)
+  // Check if specific section is in cart
+  const isSectionInCart = (sectionNumber: string) => 
+    cartItems.some(item => item.classNumber === sectionNumber);
+
+  // Count how many sections of this course are in cart
+  const cartSectionCount = cartItems.filter(item => 
+    item.code === course.code
+  ).length;
 
   const formatDescription = (description: string) => {
     const parts = [];
@@ -70,34 +91,34 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
     );
   };
 
-  const formatSchedule = (schedule: string) => {
-    if (!schedule || schedule === "TBA") return "TBA";
-    return schedule;
-  };
-
-  const handleAddToCart = async () => {
-    if (isInCart) {
-      onOpenCart()
-      return
+  const handleAddToCart = async (section: CourseCardProps['course']['sections'][0]) => {
+    if (isSectionInCart(section.classNumber)) {
+      onOpenCart();
+      return;
     }
 
-    setIsAdding(true)
+    if (cartSectionCount >= 2) {
+      toast.error("Maximum of 2 sections per course allowed");
+      return;
+    }
+
+    setIsAdding(true);
     try {
       await addToCart({
         course: {
-          courseId: course.classNumber,
+          courseId: section.classNumber,
           name: course.name,
           code: course.code,
-          instructor: course.instructor,
-          schedule: course.schedule,
-          location: course.location,
-          courseType: course.courseType,
-          section: course.section,
-          classNumber: course.classNumber,
+          instructor: section.instructor,
+          schedule: section.schedule,
+          location: section.location,
+          courseType: section.courseType,
+          section: section.section,
+          classNumber: section.classNumber,
           description: course.description,
-          subjectCode: course.subjectCode,
-          capacity: course.capacity,
-          enrolled: course.enrolled,
+          subjectCode: course.code.split(' ')[0],
+          capacity: 0, // These are no longer used
+          enrolled: 0,
         },
         sessionId: sessionId
       })
@@ -110,6 +131,10 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
     }
   }
 
+  // Check if section limit is reached (but not for sections already in cart)
+  const isLimitReached = (sectionNumber: string) => 
+    cartSectionCount >= 2 && !isSectionInCart(sectionNumber);
+
   return (
     <div className="w-full bg-white rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
       <div className="flex justify-between items-start">
@@ -121,7 +146,7 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
             </div>
             <button 
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-full"
               aria-label={isExpanded ? "Show less" : "Show more"}
             >
               <ChevronDown 
@@ -133,33 +158,63 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
           </div>
           
           <div className={`mt-2 overflow-hidden transition-all duration-200 ${
-            isExpanded ? 'max-h-96' : 'max-h-0'
+            isExpanded ? 'max-h-[80vh]' : 'max-h-0'
           }`}>
             {formatDescription(course.description)}
-            <div className="space-y-1 mt-3">
-              <p className="text-sm text-gray-600">
-                <strong>Instructor:</strong> {course.instructor}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Schedule:</strong> {formatSchedule(course.schedule)}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Location:</strong> {course.location || "TBA"}
-              </p>
+            
+            <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto">
+              {course.sections.map((section) => (
+                <div key={section.classNumber} 
+                  className="border border-gray-100 rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">Section {section.section}</p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Instructor:</strong> {section.instructor}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Schedule:</strong> {section.schedule}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <strong>Location:</strong> {section.location}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm px-2 py-1 rounded ${
+                        section.status === 'Open' ? 'bg-green-100 text-green-800' :
+                        section.status === 'WaitList' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {section.status}
+                      </span>
+                      <button 
+                        className={`ml-4 px-4 py-2 rounded-md transition-colors ${
+                          isSectionInCart(section.classNumber)
+                            ? 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'
+                            : isLimitReached(section.classNumber)
+                            ? 'bg-gray-200 text-gray-500'
+                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                        } ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => handleAddToCart(section)}
+                        disabled={isAdding || section.status === 'Closed' || isLimitReached(section.classNumber)}
+                        title={isLimitReached(section.classNumber) ? "Maximum of 2 sections per course allowed" : ""}
+                      >
+                        {isSectionInCart(section.classNumber) 
+                          ? 'In Cart' 
+                          : isLimitReached(section.classNumber)
+                          ? 'Limit Reached'
+                          : isAdding 
+                          ? 'Adding...' 
+                          : 'Add to Cart'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-        <button 
-          className={`ml-4 px-4 py-2 rounded-md transition-colors ${
-            isInCart 
-              ? 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'
-              : 'bg-purple-600 text-white hover:bg-purple-700'
-          } ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleAddToCart}
-          disabled={isAdding}
-        >
-          {isInCart ? 'In Cart' : isAdding ? 'Adding...' : 'Add to Cart'}
-        </button>
       </div>
     </div>
   )
@@ -179,16 +234,10 @@ function CartPreview({ onView }: { onView: () => void }) {
     const element = previewRef.current
     if (!element) return
 
-    // Cancel any existing animation
     if (animation.current) {
       animation.current.pause()
     }
 
-    // Set initial state
-    element.style.opacity = '0'
-    element.style.transform = 'translateY(20px)'
-
-    // Create new animation
     animation.current = anime({
       targets: element,
       translateY: [20, 0],
@@ -198,7 +247,6 @@ function CartPreview({ onView }: { onView: () => void }) {
       autoplay: true
     })
 
-    // Cleanup function
     return () => {
       if (animation.current) {
         animation.current.pause()
@@ -209,13 +257,22 @@ function CartPreview({ onView }: { onView: () => void }) {
   return (
     <div 
       ref={previewRef}
-      className="absolute bottom-full left-0 right-0 px-8 z-50"
+      className="absolute bottom-full left-0 right-0 opacity-0 transform translate-y-5"
       onClick={onView}
-      style={{ opacity: 0, transform: 'translateY(20px)' }}
     >
-      <div className="bg-[#F2F2F2] text-gray-900 py-3 px-4 cursor-pointer 
-        hover:bg-gray-200 transition-colors rounded-t-lg max-w-4xl mx-auto">
-        View cart
+      <div className="bg-white border-t border-x border-gray-100 text-gray-900 py-4 
+        cursor-pointer hover:bg-gray-50 transition-all duration-200 rounded-t-lg">
+        <div className="max-w-4xl w-full mx-auto px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-purple-100 p-1.5 rounded-full">
+              <ChevronDown className="h-4 w-4 text-purple-600 rotate-180" />
+            </div>
+            <span className="font-medium">View Cart</span>
+          </div>
+          <span className="text-sm text-gray-500 group-hover:text-purple-600 transition-colors">
+            Click to expand
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -363,6 +420,34 @@ function CartDropdown({ items, isOpen, onClose }: CartDropdownProps) {
   );
 }
 
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [isExiting, setIsExiting] = useState(false)
+
+  useEffect(() => {
+    // Smoother entrance animation from left
+    anime({
+      targets: contentRef.current,
+      translateX: [-50, 0],
+      opacity: [0, 1],
+      duration: 600,
+      easing: 'easeOutQuint',
+      delay: 50
+    })
+  }, [])
+
+  return (
+    <div 
+      ref={contentRef} 
+      className={`transform transition-all duration-500 ${
+        isExiting ? 'opacity-0 translate-x-[50px]' : ''
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function AddClassPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("CSCI-UA")
@@ -371,7 +456,7 @@ export default function AddClassPage() {
   const [searchResults, setSearchResults] = useState<Course[]>([]);
   const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId })
-  const validateSchedule = useAction(api.courses.validateSchedule)
+  const validateSchedule = useMutation(api.courses.validateSchedule);
   const [isEnrolling, setIsEnrolling] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartHovered, setIsCartHovered] = useState(false)
@@ -402,34 +487,38 @@ export default function AddClassPage() {
 
   const handleBack = () => {
     setIsVisible(false)
-    setTimeout(() => router.back(), 300)
+    const content = document.querySelector('.page-content')
+    
+    anime({
+      targets: content,
+      translateX: [0, 50],
+      opacity: [1, 0],
+      duration: 400,
+      easing: 'easeInOutQuint',
+      complete: () => router.back()
+    })
   }
 
   const handleEnroll = async () => {
-    if (!cartItems?.length) return
+    if (!cartItems?.length) return;
     
-    setIsEnrolling(true)
+    setIsEnrolling(true);
     try {
-      // Get registration numbers from cart items
-      const registrationNumbers = cartItems.map(item => item.classNumber)
-      
-      // Validate schedule
-      const result = await validateSchedule({ registrationNumbers })
+      const result = await validateSchedule();
       
       if (!result.valid) {
-        toast.error(result.error || 'Schedule validation failed')
-        return
+        toast.error(result.error || 'Schedule validation failed');
+        return;
       }
       
-      // If valid, proceed with enrollment (to be implemented)
-      toast.success("Schedule validated! Ready to enroll.")
+      toast.success(result.message);
       
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to validate schedule")
+      toast.error(error instanceof Error ? error.message : "Failed to validate schedule");
     } finally {
-      setIsEnrolling(false)
+      setIsEnrolling(false);
     }
-  }
+  };
 
   const handleCartMouseEnter = () => {
     if (cartTimeoutRef.current) {
@@ -448,71 +537,77 @@ export default function AddClassPage() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar currentPage="/add-class" />
+      <Sidebar currentPage="/classes" />
       <div className="flex-1 flex flex-col relative">
         <div className="flex-1 overflow-y-auto pb-[80px]">
           <div className="p-8">
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center gap-3 mb-6">
-                <button 
-                  onClick={handleBack}
-                  className="hover:bg-gray-100 p-2 rounded-full"
-                >
-                  <ArrowLeft className="h-6 w-6" />
-                </button>
-                <h1 className="text-3xl font-bold">Add a <span className="bg-purple-600 text-white px-3 py-1 rounded-md">Class</span></h1>
+            <PageTransition>
+              <div className="max-w-4xl mx-auto page-content">
+                <div className="flex items-center gap-3 mb-6">
+                  <button 
+                    onClick={handleBack}
+                    className="hover:bg-gray-100 p-2 rounded-full"
+                  >
+                    <ArrowLeft className="h-6 w-6" />
+                  </button>
+                  <h1 className="text-3xl font-bold">Add a <span className="bg-purple-600 text-white px-3 py-1 rounded-md">Class</span></h1>
+                </div>
+
+                <p className="text-lg mb-6">
+                  Search for a class by subject code (e.g., CSCI-UA, MATH-UA)
+                </p>
+
+                <div className="flex gap-4 mb-8">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search for courses (e.g. Linear algebra)"
+                    className="flex-1 p-3 rounded-md border border-gray-200 bg-gray-50"
+                  />
+                </div>
+
+                {searchResults === undefined ? (
+                  <div className="text-center py-8">
+                    <p>Loading courses...</p>
+                  </div>
+                ) : !searchResults || searchResults.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p>No courses found. Try a different search term.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mb-8">
+                    {searchResults.map((course: Course) => (
+                      <CourseCard 
+                        key={course._id} 
+                        course={course} 
+                        onOpenCart={() => setIsCartOpen(true)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-
-              <p className="text-lg mb-6">
-                Search for a class by subject code (e.g., CSCI-UA, MATH-UA)
-              </p>
-
-              <div className="flex gap-4 mb-8">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search for courses (e.g. Linear algebra)"
-                  className="flex-1 p-3 rounded-md border border-gray-200 bg-gray-50"
-                />
-              </div>
-
-              {searchResults === undefined ? (
-                <div className="text-center py-8">
-                  <p>Loading courses...</p>
-                </div>
-              ) : !searchResults || searchResults.length === 0 ? (
-                <div className="text-center py-8">
-                  <p>No courses found. Try a different search term.</p>
-                </div>
-              ) : (
-                <div className="space-y-3 mb-8">
-                  {searchResults.map((course: Course) => (
-                    <CourseCard 
-                      key={course._id} 
-                      course={course} 
-                      onOpenCart={() => setIsCartOpen(true)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            </PageTransition>
           </div>
         </div>
         
         <div 
-          className="absolute bottom-0 left-0 right-0 bg-white border-t z-40"
+          className="absolute bottom-0 left-0 right-0 bg-white border-t z-40 group/cart"
           onMouseEnter={handleCartMouseEnter}
           onMouseLeave={handleCartMouseLeave}
         >
-          {isCartHovered && !isCartOpen && (
-            <CartPreview 
-              onView={() => {
-                setIsCartHovered(false)
-                setIsCartOpen(true)
-              }} 
-            />
-          )}
+          <CartPreview 
+            onView={() => {
+              setIsCartHovered(false)
+              setIsCartOpen(true)
+            }} 
+          />
+          <style jsx global>{`
+            .group/cart:hover .absolute.bottom-full {
+              opacity: 1 !important;
+              transform: translateY(0) !important;
+            }
+          `}</style>
           <div className="py-4 px-8">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <h2 className="text-2xl font-semibold">
