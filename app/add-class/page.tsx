@@ -519,7 +519,7 @@ export default function AddClassPage() {
       const validationResult = await validateSchedule();
       
       if (!validationResult.valid) {
-        toast.error(validationResult.error || 'Schedule validation failed');
+        toast.error(validationResult.error || 'Schedule validation failed.');
         return;
       }
 
@@ -527,7 +527,7 @@ export default function AddClassPage() {
       const enrollResult = await enrollInCourses();
       
       if (!enrollResult.success) {
-        toast.error(enrollResult.error || 'Failed to enroll in courses');
+        toast.error(enrollResult.error || 'Failed to enroll in courses.');
         return;
       }
 
