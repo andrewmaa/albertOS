@@ -56,7 +56,13 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId }) || []
+  const enrolledCourses = useQuery(api.courses.getRegisteredCourses) || [];
   
+  // Check if course is enrolled
+  const isEnrolled = enrolledCourses.some(
+    enrolled => enrolled.code === course.code
+  );
+
   // Check if specific section is in cart
   const isSectionInCart = (sectionNumber: string) => 
     cartItems.some(item => item.classNumber === sectionNumber);
@@ -190,18 +196,22 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
                       </span>
                       <button 
                         className={`ml-4 px-4 py-2 rounded-md transition-colors ${
-                          isSectionInCart(section.classNumber)
+                          isEnrolled 
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : isSectionInCart(section.classNumber)
                             ? 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'
                             : isLimitReached(section.classNumber)
                             ? 'bg-gray-200 text-gray-500'
                             : 'bg-purple-600 text-white hover:bg-purple-700'
                         } ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => handleAddToCart(section)}
-                        disabled={isAdding || section.status === 'Closed' || isLimitReached(section.classNumber)}
-                        title={isLimitReached(section.classNumber) ? "Maximum of 2 sections per course allowed" : ""}
+                        disabled={isAdding || section.status === 'Closed' || isLimitReached(section.classNumber) || isEnrolled}
+                        title={isEnrolled ? "Already enrolled in this course" : ""}
                       >
-                        {isSectionInCart(section.classNumber) 
-                          ? 'In Cart' 
+                        {isEnrolled 
+                          ? 'Enrolled' 
+                          : isSectionInCart(section.classNumber)
+                          ? 'In Cart'
                           : isLimitReached(section.classNumber)
                           ? 'Limit Reached'
                           : isAdding 
@@ -462,6 +472,7 @@ export default function AddClassPage() {
   const [isCartHovered, setIsCartHovered] = useState(false)
   const cartTimeoutRef = useRef<NodeJS.Timeout>()
   const previewRef = useRef<HTMLDivElement | null>(null)
+  const enrollInCourses = useMutation(api.courses.enrollInCourses);
 
   useEffect(() => {
     // Small delay to ensure proper mounting
@@ -504,17 +515,38 @@ export default function AddClassPage() {
     
     setIsEnrolling(true);
     try {
-      const result = await validateSchedule();
+      // First validate the schedule
+      const validationResult = await validateSchedule();
       
-      if (!result.valid) {
-        toast.error(result.error || 'Schedule validation failed');
+      if (!validationResult.valid) {
+        toast.error(validationResult.error || 'Schedule validation failed');
         return;
       }
+
+      // If valid, proceed with enrollment
+      const enrollResult = await enrollInCourses();
       
-      toast.success(result.message);
+      if (!enrollResult.success) {
+        toast.error(enrollResult.error || 'Failed to enroll in courses');
+        return;
+      }
+
+      // Success! Show message and redirect
+      toast.success("Successfully enrolled in courses!");
       
+      // Animate out and redirect
+      const content = document.querySelector('.page-content');
+      anime({
+        targets: content,
+        translateX: [0, 50],
+        opacity: [1, 0],
+        duration: 400,
+        easing: 'easeInOutQuint',
+        complete: () => router.push('/classes')
+      });
+
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to validate schedule");
+      toast.error(error instanceof Error ? error.message : "Failed to enroll in courses");
     } finally {
       setIsEnrolling(false);
     }

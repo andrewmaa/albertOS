@@ -195,9 +195,23 @@ export const addToCart = mutation({
   handler: async (ctx, { course, sessionId }) => {
     try {
       const userId = await getCurrentSessionUser(ctx, sessionId);
-      console.log("Using session user:", userId);
 
-      // Check if course already exists in cart
+      // Check if already enrolled
+      const existingEnrollment = await ctx.db
+        .query("enrollments")
+        .filter((q) => 
+          q.and(
+            q.eq(q.field("userId"), userId),
+            q.eq(q.field("code"), course.code)
+          )
+        )
+        .first();
+
+      if (existingEnrollment) {
+        throw new Error("You are already enrolled in this course");
+      }
+
+      // Rest of the existing addToCart logic...
       const existingItem = await ctx.db
         .query("cart")
         .filter((q) => 
@@ -209,12 +223,10 @@ export const addToCart = mutation({
         .first();
 
       if (existingItem) {
-        console.log("Course already in cart");
         return existingItem;
       }
 
-      // Add to cart with the session user ID
-      const cartItem = await ctx.db.insert("cart", {
+      return await ctx.db.insert("cart", {
         userId,
         courseId: course.courseId,
         name: course.name,
@@ -231,10 +243,7 @@ export const addToCart = mutation({
         enrolled: course.enrolled,
       });
 
-      console.log("Added to cart:", cartItem);
-      return cartItem;
     } catch (error) {
-      console.error("Error adding to cart:", error);
       throw error;
     }
   },
@@ -402,29 +411,60 @@ function hasTimeConflict(schedule1: ParsedSchedule, schedule2: ParsedSchedule): 
 
 export const getRegisteredCourses = query({
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
-    const userId = identity.subject;
-    
+    // Get all enrollments directly
     const enrollments = await ctx.db
       .query("enrollments")
-      .filter((q) => q.eq(q.field("userId"), userId as Id<"users">))
       .collect();
 
-    // Since courseId is now a string, we need to query courses differently
-    const courses = await Promise.all(
-      enrollments.map(async (enrollment) => {
-        const course = await ctx.db
-          .query("courses")
-          .filter((q) => q.eq(q.field("_id"), enrollment.courseId))
-          .first();
-        return course;
-      })
-    );
-
-    return courses.filter((course): course is NonNullable<typeof course> => 
-      course !== null
-    );
+    // Return enrollments directly since they contain all course info
+    return enrollments.map(enrollment => ({
+      _id: enrollment._id,
+      name: enrollment.name,
+      code: enrollment.code,
+      instructor: enrollment.instructor,
+      schedule: enrollment.schedule,
+      location: enrollment.location,
+      courseType: enrollment.courseType,
+      section: enrollment.section,
+      classNumber: enrollment.classNumber
+    }));
   },
+});
+
+export const enrollInCourses = mutation({
+  args: {},
+  handler: async (ctx) => {
+    try {
+      // Get cart items
+      const cartItems = await ctx.db.query("cart").collect();
+      if (!cartItems?.length) return { success: false, error: "Cart is empty" };
+
+      // Add each cart item to enrollments
+      for (const item of cartItems) {
+        if (!item.userId) {
+          continue; // Skip items without userId
+        }
+
+        await ctx.db.insert("enrollments", {
+          userId: item.userId, // Now TypeScript knows userId exists
+          courseId: item._id,
+          name: item.name,
+          code: item.code,
+          instructor: item.instructor,
+          schedule: item.schedule,
+          location: item.location,
+          courseType: item.courseType,
+          section: item.section,
+          classNumber: item.classNumber
+        });
+
+        // Delete from cart after successful enrollment
+        await ctx.db.delete(item._id);
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: "Failed to enroll in courses" };
+    }
+  }
 }); 

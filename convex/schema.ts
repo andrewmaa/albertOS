@@ -45,5 +45,13 @@ export default defineSchema({
   enrollments: defineTable({
     userId: v.id("users"),
     courseId: v.string(),
+    name: v.string(),
+    code: v.string(),
+    instructor: v.string(),
+    schedule: v.string(),
+    location: v.string(),
+    courseType: v.string(),
+    section: v.string(),
+    classNumber: v.string(),
   }),
 }); 

@@ -12,9 +12,17 @@ import type { Course } from "../../convex/types"
 import anime from 'animejs'
 import { Id } from "../../convex/_generated/dataModel"
 
-interface ClassItemProps extends Course {
+interface ClassItemProps {
   isExpanded?: boolean;
   onToggle?: () => void;
+  name: string;
+  code: string;
+  instructor: string;
+  schedule: string;
+  location: string;
+  courseType: string;
+  section: string;
+  classNumber: string;
 }
 
 function ClassItem({ 
