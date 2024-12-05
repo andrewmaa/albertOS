@@ -11,6 +11,7 @@ import { api } from "../../convex/_generated/api"
 import type { Course } from "../../convex/types"
 import anime from 'animejs'
 import { Id } from "../../convex/_generated/dataModel"
+import { RotatingText } from "@/app/components/rotating-text"
 
 interface ClassItemProps {
   isExpanded?: boolean;
@@ -124,14 +125,21 @@ export default function ClassesPage() {
         <PageTransition>
           <div className="max-w-4xl mx-auto page-content">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold">My Classes</h1>
-              <button
-                onClick={handleAddClass}
-                className="h-10 w-10 rounded-full bg-purple-600 flex items-center justify-center text-white hover:bg-purple-700 transition-colors duration-200"
-                aria-label="Add new class"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
+              <h1 className="text-3xl font-bold">My <span className="bg-[#007AFF] text-white px-2 py-1 rounded-md">Classes</span></h1>
+              <div className="relative w-32 h-32 flex items-center justify-center group">
+                <div className="absolute w-20 h-20 group-hover:scale-125 transition-transform duration-200">
+                  <RotatingText />
+                </div>
+                <button
+                  onClick={handleAddClass}
+                  className="w-10 h-10 rounded-full bg-[#007AFF] flex items-center justify-center text-white 
+                    hover:bg-[#007AFF]/80 transition-all duration-200 z-10
+                    group-hover:scale-125"
+                  aria-label="Add new class"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-start">

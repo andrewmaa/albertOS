@@ -148,7 +148,7 @@ export const searchCourses = action({
               courseType: section.type || "In-Person",
               section: section.code || "001",
               classNumber: section.registrationNumber?.toString() || "",
-              status: section.status || "Open"
+              status: section.status === "WaitList" ? "Waitlist" : section.status || "Open"
             };
           });
 

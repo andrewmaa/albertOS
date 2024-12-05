@@ -55,7 +55,16 @@ export default {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		animation: {
+  			'rotate-slow': 'rotate 15s linear infinite',
+  		},
+  		keyframes: {
+  			rotate: {
+  				'0%': { transform: 'rotate(0deg)' },
+  				'100%': { transform: 'rotate(360deg)' },
+  			},
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

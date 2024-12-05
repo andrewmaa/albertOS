@@ -189,20 +189,20 @@ function CourseCard({ course, onOpenCart }: CourseCardProps) {
                     <div className="flex items-center gap-2">
                       <span className={`text-sm px-2 py-1 rounded ${
                         section.status === 'Open' ? 'bg-green-100 text-green-800' :
-                        section.status === 'WaitList' ? 'bg-yellow-100 text-yellow-800' :
+                        section.status === 'Waitlist' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {section.status}
+                        {section.status === 'Waitlist' ? 'Waitlist' : section.status}
                       </span>
                       <button 
                         className={`ml-4 px-4 py-2 rounded-md transition-colors ${
                           isEnrolled 
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                             : isSectionInCart(section.classNumber)
-                            ? 'border-2 border-purple-600 text-purple-600 hover:bg-purple-50'
+                            ? 'border-2 border-[#007AFF] text-[#007AFF] hover:bg-[#007AFF]/5'
                             : isLimitReached(section.classNumber)
                             ? 'bg-gray-200 text-gray-500'
-                            : 'bg-purple-600 text-white hover:bg-purple-700'
+                            : 'bg-[#007AFF] text-white hover:bg-[#007AFF]/80'
                         } ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => handleAddToCart(section)}
                         disabled={isAdding || section.status === 'Closed' || isLimitReached(section.classNumber) || isEnrolled}
@@ -582,7 +582,7 @@ export default function AddClassPage() {
                   >
                     <ArrowLeft className="h-6 w-6" />
                   </button>
-                  <h1 className="text-3xl font-bold">Add a <span className="bg-purple-600 text-white px-3 py-1 rounded-md">Class</span></h1>
+                  <h1 className="text-3xl font-bold">Add a <span className="bg-[#007AFF] text-white px-3 py-1 rounded-md">Class</span></h1>
                 </div>
 
                 <p className="text-lg mb-6">
