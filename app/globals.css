@@ -73,3 +73,14 @@
     font-weight: 900;
   }
 }
+
+html {
+  scroll-behavior: smooth;
+  overflow-y: scroll;
+  scroll-behavior: auto;
+}
+
+/* Prevent scroll position restoration */
+html {
+  scroll-top-behavior: auto;
+}

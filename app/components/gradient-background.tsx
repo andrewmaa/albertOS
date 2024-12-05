@@ -10,6 +10,7 @@ function GradientBackground() {
   const mousePosition = useRef({ x: 0, y: 0 })
   const targetPosition = useRef({ x: 0, y: 0 })
   
+  // Get viewport size and update mesh scale
   const { viewport } = useThree()
 
   useEffect(() => {
@@ -20,9 +21,6 @@ function GradientBackground() {
   }, [viewport])
 
   useEffect(() => {
-    mousePosition.current = { x: 0, y: 0 }
-    targetPosition.current = { x: 0, y: 0 }
-
     const handleMouseMove = (event: MouseEvent) => {
       mousePosition.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
@@ -41,8 +39,8 @@ function GradientBackground() {
     targetPosition.current.y += (mousePosition.current.y - targetPosition.current.y) * 0.05
 
     materialRef.current.uniforms.uMouse.value.set(
-      targetPosition.current.x,
-      targetPosition.current.y
+      mousePosition.current.x,
+      mousePosition.current.y
     )
     materialRef.current.uniforms.uTime.value = state.clock.elapsedTime * 1.0
   })
