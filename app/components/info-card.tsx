@@ -52,14 +52,16 @@ export function InfoCard({ title, description, status, icon = "alert" }: InfoCar
             <IconComponent className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-medium text-gray-900 leading-6">{title}</h3>
-              <StatusBadge status={status} />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+              <h3 className="text-base font-medium text-gray-900 leading-6 min-w-0 flex-shrink">{title}</h3>
+              <div className="flex-shrink-0">
+                <StatusBadge status={status} />
+              </div>
             </div>
             <div
               ref={textRef}
               className={cn(
-                "mt-2 text-sm text-gray-600",
+                "text-sm text-gray-600",
                 !isExpanded && "line-clamp-2"
               )}
             >

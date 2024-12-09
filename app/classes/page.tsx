@@ -268,25 +268,86 @@ function CourseCard({ course, onOpenCart }: {
   )
 }
 
-function CartPreview({ onClick }: { onClick: () => void }) {
-  const previewRef = useRef<HTMLDivElement>(null)
-
+function CartSidebar({ 
+  cartItems, 
+  isEnrolling, 
+  onEnroll, 
+  onViewDetails, 
+  isDetailsOpen 
+}: { 
+  cartItems?: CartItem[];
+  isEnrolling: boolean;
+  onEnroll: () => void;
+  onViewDetails: () => void;
+  isDetailsOpen: boolean;
+}) {
+  const itemCount = cartItems?.length || 0;
+  
   return (
-    <div 
-      ref={previewRef}
-      className="cursor-pointer hover:bg-gray-50 transition-colors"
-      onClick={onClick}
-    >
-      <div className="max-w-4xl w-full mx-auto px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-purple-100 p-1.5 rounded-full">
-            <ChevronDown className="h-4 w-4 text-purple-600 rotate-180" />
+    <div className="fixed bottom-0 left-0 right-0 z-30">
+      {/* Preview Section */}
+      <div 
+        onClick={onViewDetails}
+        className="bg-white border-t hover:bg-gray-50 cursor-pointer"
+      >
+        <div className="max-w-4xl w-full mx-auto px-8 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`p-1 rounded-full transition-colors duration-200
+              ${itemCount > 0 ? 'bg-blue-100' : 'bg-gray-100'}`}
+            >
+              <ChevronDown 
+                className={`h-4 w-4 transition-transform duration-200 
+                  ${itemCount > 0 ? 'text-blue-600' : 'text-gray-400'}
+                  ${isDetailsOpen ? 'rotate-180' : ''}`} 
+              />
+            </div>
+            <span className="text-sm font-medium">
+              {itemCount > 0 
+                ? `${itemCount} course${itemCount === 1 ? '' : 's'} in cart` 
+                : 'Cart is empty'}
+            </span>
           </div>
-          <span className="font-medium">View Cart</span>
+          {itemCount > 0 && (
+            <span className="text-sm text-blue-600">
+              Click to view details
+            </span>
+          )}
         </div>
-        <span className="text-sm text-gray-500">
-          Click to expand
-        </span>
+      </div>
+
+      {/* Main Cart Section */}
+      <div className="bg-white border-t">
+        <div className="max-w-4xl w-full mx-auto px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold">Cart</h2>
+            {itemCount > 0 && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                {itemCount} {itemCount === 1 ? 'course' : 'courses'}
+              </span>
+            )}
+          </div>
+          <button 
+            className={`px-6 py-2.5 rounded-md flex items-center gap-2 font-medium transition-colors
+              ${(!cartItems?.length || isEnrolling)
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-green-500 text-white hover:bg-green-600'
+              }`}
+            onClick={onEnroll}
+            disabled={!cartItems?.length || isEnrolling}
+          >
+            {isEnrolling ? (
+              <>
+                <span className="animate-spin">↻</span>
+                Validating...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Enroll Now
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -443,7 +504,7 @@ export default function ClassesPage() {
   const addClassPanelRef = useRef<HTMLDivElement>(null)
   const courses = useQuery(api.courses.getRegisteredCourses)
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("CSCI-UA")
+  const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [sessionId] = useLocalStorage('sessionId', Date.now().toString())
   const cartItems = useQuery(api.courses.getCartItems, { sessionId })
@@ -453,18 +514,12 @@ export default function ClassesPage() {
   const enrollInCourses = useMutation(api.courses.enrollInCourses)
   const [isEnrolling, setIsEnrolling] = useState(false)
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      if (searchTerm.length >= 6) {
-        const results = await searchCourses({ searchTerm });
-        setSearchResults(results);
-      } else {
-        setSearchResults([]);
-      }
-    };
-    
-    fetchCourses();
-  }, [searchTerm, searchCourses]);
+  const handleSearch = async () => {
+    if (searchTerm.length >= 6) {
+      const results = await searchCourses({ searchTerm });
+      setSearchResults(results);
+    }
+  };
 
   const handleEnroll = async () => {
     if (!cartItems?.length) return;
@@ -615,7 +670,7 @@ export default function ClassesPage() {
                 </div>
 
                 <p className="text-lg mb-6">
-                  Search for a class by subject code (e.g., CSCI-UA, MATH-UA)
+                  Search for a class by course name, description, or subject code (e.g., CSCI-UA, Calculus I)
                 </p>
 
                 <div className="flex gap-4 mb-8">
@@ -625,7 +680,23 @@ export default function ClassesPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search for courses (e.g. Linear algebra)"
                     className="flex-1 p-3 rounded-md border border-gray-200 bg-gray-50"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchTerm.length >= 6) {
+                        handleSearch();
+                      }
+                    }}
                   />
+                  <button
+                    onClick={handleSearch}
+                    disabled={searchTerm.length < 6}
+                    className={`px-6 py-3 rounded-md transition-colors ${
+                      searchTerm.length >= 6
+                        ? 'bg-[#007AFF] text-white hover:bg-[#007AFF]/80'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    Search
+                  </button>
                 </div>
 
                 {searchResults === undefined ? (
@@ -650,38 +721,13 @@ export default function ClassesPage() {
               </div>
             </div>
 
-            {/* Cart UI - Move inside the scroll container but keep fixed positioning */}
-            <div 
-              className="fixed bottom-0 left-0 right-0 bg-white border-t z-40"
-            >
-              <CartPreview 
-                onClick={() => setIsCartOpen(true)} 
-              />
-              <div className="py-4 px-8">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">
-                    Cart {cartItems?.length ? `(${cartItems.length})` : ''}
-                  </h2>
-                  <button 
-                    className={`bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md flex items-center gap-2 
-                      ${(!cartItems?.length || isEnrolling) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={handleEnroll}
-                    disabled={!cartItems?.length || isEnrolling}
-                  >
-                    {isEnrolling ? (
-                      <>
-                        <span className="animate-spin">↻</span>
-                        Validating...
-                      </>
-                    ) : (
-                      <>
-                        <span>+</span> Enroll
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CartSidebar 
+              cartItems={cartItems}
+              isEnrolling={isEnrolling}
+              onEnroll={handleEnroll}
+              onViewDetails={() => setIsCartOpen(true)}
+              isDetailsOpen={isCartOpen}
+            />
 
             <CartDropdown 
               items={cartItems || []} 

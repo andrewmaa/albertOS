@@ -166,11 +166,11 @@ export default function PlannerPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar currentPage="/planner" />
-      <div className="flex-1 overflow-hidden">
-        <div className="p-8 h-screen flex flex-col">
+      <div className="flex-1 overflow-hidden w-full">
+        <div className="p-4 lg:p-8 h-screen flex flex-col pt-16 lg:pt-8">
           <div className="max-w-4xl mx-auto w-full">
             <div className="flex justify-between items-center h-[40px] mb-6">
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-2xl lg:text-3xl font-bold">
                 My <span className="bg-[#8900E1] text-white px-2 py-1 rounded-md">Planner</span>
               </h1>
               <div className="w-[40px]"></div>
@@ -180,7 +180,7 @@ export default function PlannerPage() {
             </p>
 
             {/* Schedule container with fixed height and scrolling */}
-            <div className="bg-white rounded-lg shadow-lg p-6 h-[calc(100vh-220px)] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-lg p-3 lg:p-6 h-[calc(100vh-220px)] overflow-x-auto">
               <div className="h-full overflow-y-auto">
                 <div className="grid grid-cols-[auto_repeat(6,1fr)] gap-1 relative">
                   <div className="font-medium text-gray-500 sticky top-0 bg-white z-20 h-6"></div>
